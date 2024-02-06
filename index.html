@@ -16,9 +16,9 @@
 <body> 
     <header>
         <ul>
-            <li><a>Home</a></li>
-            <li><a>About</a></li>
-            <li><a>Project</a></li>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Project</a></li>
         </ul>
     </header> 
     <div id="box1">
@@ -31,12 +31,10 @@
     <script>
         // Function to generate a Link Token
         function generateLinkToken() {
-            // Replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET' with your actual Plaid API credentials
-            const clientId = '65c29572ef878c001b623415';
-            const secret = '4160b20f04b5b82e253a75d7e7cfd7';
+            const clientId = 'YOUR_CLIENT_ID';
+            const secret = 'YOUR_SECRET';
 
-            // Payload for generating the Link Token
-            const payload = JSON.stringify({
+            const payload = {
                 client_id: clientId,
                 secret: secret,
                 user: {
@@ -46,24 +44,25 @@
                 products: ['auth', 'transactions'],
                 country_codes: ['US'],
                 language: 'en'
-            });
+            };
 
-            // URL for Plaid's API endpoint to generate a Link Token
-            const plaidUrl = 'https://sandbox.plaid.com/link/token/create'; // Use sandbox environment for testing
-
-            // Make a POST request to the Plaid API to generate the Link Token
-            fetch(plaidUrl, {
+            fetch('https://sandbox.plaid.com/link/token/create', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: payload
+                body: JSON.stringify(payload)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 const linkToken = data.link_token;
                 console.log('Link Token:', linkToken);
-                initializePlaidLink(linkToken); // Initialize Plaid Link with the generated Link Token
+                initializePlaidLink(linkToken);
             })
             .catch(error => {
                 console.error('Error generating Link Token:', error);
@@ -78,7 +77,8 @@
                     // Handle successful Plaid Link flow
                     console.log('Public Token:', publicToken);
                     console.log('Metadata:', metadata);
-                    // Send publicToken to your server for further processing
+                    // Exchange public token for access token to fetch account balances
+                    exchangePublicToken(publicToken);
                 },
                 onExit: function(err, metadata) {
                     // Handle user exit from Plaid Link flow
@@ -91,6 +91,51 @@
 
             // Open Plaid Link flow
             linkHandler.open();
+        }
+
+        // Function to exchange public token for access token
+        function exchangePublicToken(publicToken) {
+            // You would typically send the public token to your server for exchange, 
+            // but for demonstration purposes, we'll use a mock endpoint here
+            const mockExchangeEndpoint = 'https://sandbox.plaid.com/item/public_token/exchange';
+            const clientId = 'YOUR_CLIENT_ID';
+            const secret = 'YOUR_SECRET';
+
+            const payload = {
+                client_id: clientId,
+                secret: secret,
+                public_token: publicToken,
+            };
+
+            fetch(mockExchangeEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const accessToken = data.access_token;
+                console.log('Access Token:', accessToken);
+                // Fetch account balances using access token
+                fetchAccountBalances(accessToken);
+            })
+            .catch(error => {
+                console.error('Error exchanging public token:', error);
+            });
+        }
+
+        // Function to fetch account balances using access token
+        function fetchAccountBalances(accessToken) {
+            // Use the access token to fetch account balances from Plaid API
+            // Replace this with your own logic to retrieve account balances
+            console.log('Fetching account balances...');
         }
 
         // Call generateLinkToken function when the button is clicked
