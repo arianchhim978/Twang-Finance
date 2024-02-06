@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twang Finance Tracker</title>
+    <!-- Include Plaid JavaScript SDK -->
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <!-- Include your CSS styles -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Include Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Protest+Strike&display=swap" rel="stylesheet">
+</head>
+<body> 
+    <header>
+        <ul>
+            <li><a>Home</a></li>
+            <li><a>About</a></li>
+            <li><a>Project</a></li>
+        </ul>
+    </header> 
+    <div id="box1">
+        <h1>Twang Finance Tracker</h1>
+        <!-- Button to trigger Plaid Link -->
+        <button id="link-button">Link Bank Account</button>
+    </div>
+    
+    <!-- Your JavaScript code using Plaid SDK -->
+    <script>
+        // Function to generate a Link Token
+        function generateLinkToken() {
+            // Replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET' with your actual Plaid API credentials
+            const clientId = '65c29572ef878c001b623415';
+            const secret = '4160b20f04b5b82e253a75d7e7cfd7';
+
+            // Payload for generating the Link Token
+            const payload = JSON.stringify({
+                client_id: clientId,
+                secret: secret,
+                user: {
+                    client_user_id: 'unique-id' // Replace with a unique identifier for your user
+                },
+                client_name: 'Your App Name',
+                products: ['auth', 'transactions'],
+                country_codes: ['US'],
+                language: 'en'
+            });
+
+            // URL for Plaid's API endpoint to generate a Link Token
+            const plaidUrl = 'https://sandbox.plaid.com/link/token/create'; // Use sandbox environment for testing
+
+            // Make a POST request to the Plaid API to generate the Link Token
+            fetch(plaidUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: payload
+            })
+            .then(response => response.json())
+            .then(data => {
+                const linkToken = data.link_token;
+                console.log('Link Token:', linkToken);
+                initializePlaidLink(linkToken); // Initialize Plaid Link with the generated Link Token
+            })
+            .catch(error => {
+                console.error('Error generating Link Token:', error);
+            });
+        }
+
+        // Function to initialize Plaid Link with the generated Link Token
+        function initializePlaidLink(linkToken) {
+            var linkHandler = Plaid.create({
+                token: linkToken,
+                onSuccess: function(publicToken, metadata) {
+                    // Handle successful Plaid Link flow
+                    console.log('Public Token:', publicToken);
+                    console.log('Metadata:', metadata);
+                    // Send publicToken to your server for further processing
+                },
+                onExit: function(err, metadata) {
+                    // Handle user exit from Plaid Link flow
+                    if (err != null) {
+                        console.error('Error:', err);
+                    }
+                    console.log('Metadata:', metadata);
+                },
+            });
+
+            // Open Plaid Link flow
+            linkHandler.open();
+        }
+
+        // Call generateLinkToken function when the button is clicked
+        document.getElementById('link-button').addEventListener('click', generateLinkToken);
+    </script>
+</body>
+</html>
